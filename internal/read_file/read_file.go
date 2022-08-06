@@ -15,7 +15,7 @@ type reader struct {
 func (r *reader) Readline() (string, error) {
 	line, err := r.ReadString(byte(separator))
 	if err != nil {
-		return "", err
+		return line, err
 	}
 	return strings.TrimSuffix(line, string(separator)), nil
 }

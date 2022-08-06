@@ -44,3 +44,13 @@ func TestConvertIP(t *testing.T) {
 		assert.EqualError(err, "strconv.ParseUint: parsing \"-1\": invalid syntax")
 	})
 }
+
+var ip string = "145.67.23.4"
+
+func BenchmarkConvert(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		var test = Convert
+		test(ip)
+	}
+
+}

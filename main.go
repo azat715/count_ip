@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	bitmap "example.com/count_ip/internal/bit"
 	iptoint "example.com/count_ip/internal/ip_to_int"
 	readfile "example.com/count_ip/internal/read_file"
 )
@@ -16,23 +17,20 @@ func main() {
 		log.Panic("open file:", err)
 	}
 	defer closer()
-loop:
+	b := bitmap.New()
 	for {
-		line, err := f.Readline()
-		switch err {
-		case io.EOF:
-			fmt.Println("End file")
-			break loop
-		case nil:
-			break
-		default:
-			log.Panic("read file:", err)
+		line, readErr := f.Readline()
+		if (readErr != nil) && (readErr != io.EOF) {
+			log.Println("read file:", readErr)
 		}
 		i, err := iptoint.Convert(line)
 		if err != nil {
-			log.Panic("convert ip:", err)
+			log.Println("convert ip:", err)
 		}
-		fmt.Println(i)
-
+		b.Set(i)
+		if readErr == io.EOF {
+			break
+		}
 	}
+	fmt.Println("uniq ip:", b.Count())
 }
