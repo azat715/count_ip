@@ -12,12 +12,13 @@
 
 
 https://github.com/Ecwid/new-job/blob/master/IP-Addr-Counter.md
+
 https://habr.com/ru/post/679008/
 
 
 
 
-
+```bash
 ❯ time ~/Documents/azat715/go/count_ip/count_ip ip_addresses
 2022/08/07 11:31:17 convert ip: strconv.ParseUint: parsing "": invalid syntax
 uniq ip: 1000000000
@@ -26,3 +27,4 @@ ________________________________________________________
 Executed in   38.48 mins    fish           external
    usr time   32.08 mins  340.00 micros   32.08 mins
    sys time    1.18 mins    0.00 micros    1.18 mins
+```
