@@ -3,26 +3,15 @@ package readfile
 import (
 	"bufio"
 	"os"
-	"strings"
 )
 
-const separator rune = '\n'
-
 type reader struct {
-	*bufio.Reader
-}
-
-func (r *reader) Readline() (string, error) {
-	line, err := r.ReadString(byte(separator))
-	if err != nil {
-		return line, err
-	}
-	return strings.TrimSuffix(line, string(separator)), nil
+	*bufio.Scanner
 }
 
 func newReader(f *os.File) *reader {
 	return &reader{
-		bufio.NewReader(f),
+		bufio.NewScanner(f),
 	}
 }
 
