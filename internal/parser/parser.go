@@ -11,22 +11,20 @@ import (
 	readfile "example.com/count_ip/internal/read_file"
 )
 
-var bitArr = bitmap.New()
-
-func b2s(b []byte) string {
-	/* на основе strings.Builder.String*/
-	return *(*string)(unsafe.Pointer(&b))
-}
-
 const sep = byte(46)
 
-var pos int = 0
+var (
+	bitArr     = bitmap.New()
+	pos    int = 0
+	indx   [3]int
+	buffer [4]byte
+	strArr [4]string
+)
 
-var indx [3]int
-
-var buffer [4]byte
-
-var strArr [4]string
+func b2s(b []byte) string {
+	// на основе strings.Builder.String
+	return *(*string)(unsafe.Pointer(&b))
+}
 
 func parseByte(s []byte) error {
 	for i := 0; i < len(s); i++ {
@@ -48,9 +46,11 @@ func parseByte(s []byte) error {
 		}
 		buffer[i] = uint8(num)
 	}
-
 	bitArr.Set(binary.BigEndian.Uint32(buffer[:]))
-	pos = 0
+
+	defer func() {
+		pos = 0
+	}()
 	return nil
 }
 
@@ -62,8 +62,7 @@ func Parser(file string) (int, error) {
 	defer closer()
 
 	for f.Scan() {
-		s := f.Bytes()
-		err := parseByte(s)
+		err := parseByte(f.Bytes())
 		if err != nil {
 			return 0, err
 		}

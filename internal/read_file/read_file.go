@@ -17,11 +17,19 @@ func newReader(f *os.File) *reader {
 
 type TextFile struct {
 	f *os.File
-	*reader
+	r *reader
 }
 
 func (t *TextFile) Close() error {
 	return t.f.Close()
+}
+
+func (t *TextFile) Bytes() []byte {
+	return t.r.Bytes()
+}
+
+func (t *TextFile) Scan() bool {
+	return t.r.Scan()
 }
 
 func New(path string) (*TextFile, func() error, error) {
