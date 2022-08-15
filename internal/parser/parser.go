@@ -14,7 +14,7 @@ import (
 var bitArr = bitmap.New()
 
 func b2s(b []byte) string {
-	/* #nosec G103 */
+	/* на основе strings.Builder.String*/
 	return *(*string)(unsafe.Pointer(&b))
 }
 
