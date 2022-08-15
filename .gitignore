@@ -22,4 +22,6 @@ go.work
 
 .vscode
 *.db
+*.txt
 go_rest
+count_ip
