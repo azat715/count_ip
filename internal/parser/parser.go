@@ -3,6 +3,7 @@ package parser
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"strconv"
 	"unsafe"
@@ -11,46 +12,56 @@ import (
 	readfile "example.com/count_ip/internal/read_file"
 )
 
-var bitArr = bitmap.New()
+const sep = byte(46)
+
+var (
+	bitArr = bitmap.New()
+	buffer [4]byte
+)
 
 func b2s(b []byte) string {
-	/* на основе strings.Builder.String*/
+	// на основе strings.Builder.String
 	return *(*string)(unsafe.Pointer(&b))
 }
 
-const sep = byte(46)
+type iterator struct {
+	Buffer []byte
+	Token  []byte
+}
 
-var pos int = 0
-
-var indx [3]int
-
-var buffer [4]byte
-
-var strArr [4]string
-
-func parseByte(s []byte) error {
-	for i := 0; i < len(s); i++ {
-		if s[i] == sep {
-			indx[pos] = i
-			pos++
+func (iter *iterator) Next() bool {
+	for i := 0; i < len(iter.Buffer); i++ {
+		if iter.Buffer[i] == sep {
+			iter.Token = iter.Buffer[:i]
+			iter.Buffer = iter.Buffer[i+1:]
+			return true
 		}
 	}
+	if iter.Buffer != nil {
+		iter.Token = iter.Buffer
+		iter.Buffer = nil
+		return true
+	}
+	return false
+}
 
-	strArr[0] = b2s(s[:indx[0]])
-	strArr[1] = b2s(s[indx[0]+1 : indx[1]])
-	strArr[2] = b2s(s[indx[1]+1 : indx[2]])
-	strArr[3] = b2s(s[indx[2]+1:])
+var iter = iterator{}
 
+func parseByte(s []byte) error {
+	iter.Buffer = s
 	for i := 0; i < 4; i++ {
-		num, err := strconv.ParseUint(strArr[i], 0, 8)
-		if err != nil {
-			return fmt.Errorf("convert ip: %w", err)
+		if iter.Next() == true {
+			num, err := strconv.ParseUint(b2s(iter.Token), 0, 8)
+			if err != nil {
+				return fmt.Errorf("convert ip: %w", err)
+			}
+			buffer[i] = uint8(num)
+		} else {
+			return errors.New("bad count fields")
 		}
-		buffer[i] = uint8(num)
 	}
 
 	bitArr.Set(binary.BigEndian.Uint32(buffer[:]))
-	pos = 0
 	return nil
 }
 
@@ -62,8 +73,7 @@ func Parser(file string) (int, error) {
 	defer closer()
 
 	for f.Scan() {
-		s := f.Bytes()
-		err := parseByte(s)
+		err := parseByte(f.Bytes())
 		if err != nil {
 			return 0, err
 		}
