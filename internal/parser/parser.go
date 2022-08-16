@@ -3,6 +3,7 @@ package parser
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"strconv"
 	"unsafe"
@@ -14,11 +15,8 @@ import (
 const sep = byte(46)
 
 var (
-	bitArr     = bitmap.New()
-	pos    int = 0
-	indx   [3]int
+	bitArr = bitmap.New()
 	buffer [4]byte
-	strArr [4]string
 )
 
 func b2s(b []byte) string {
@@ -26,31 +24,44 @@ func b2s(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
+type iterator struct {
+	Buffer []byte
+	Token  []byte
+}
+
+func (iter *iterator) Next() bool {
+	for i := 0; i < len(iter.Buffer); i++ {
+		if iter.Buffer[i] == sep {
+			iter.Token = iter.Buffer[:i]
+			iter.Buffer = iter.Buffer[i+1:]
+			return true
+		}
+	}
+	if iter.Buffer != nil {
+		iter.Token = iter.Buffer
+		iter.Buffer = nil
+		return true
+	}
+	return false
+}
+
+var iter = iterator{}
+
 func parseByte(s []byte) error {
-	for i := 0; i < len(s); i++ {
-		if s[i] == sep {
-			indx[pos] = i
-			pos++
-		}
-	}
-
-	strArr[0] = b2s(s[:indx[0]])
-	strArr[1] = b2s(s[indx[0]+1 : indx[1]])
-	strArr[2] = b2s(s[indx[1]+1 : indx[2]])
-	strArr[3] = b2s(s[indx[2]+1:])
-
+	iter.Buffer = s
 	for i := 0; i < 4; i++ {
-		num, err := strconv.ParseUint(strArr[i], 0, 8)
-		if err != nil {
-			return fmt.Errorf("convert ip: %w", err)
+		if iter.Next() == true {
+			num, err := strconv.ParseUint(b2s(iter.Token), 0, 8)
+			if err != nil {
+				return fmt.Errorf("convert ip: %w", err)
+			}
+			buffer[i] = uint8(num)
+		} else {
+			return errors.New("bad count fields")
 		}
-		buffer[i] = uint8(num)
 	}
-	bitArr.Set(binary.BigEndian.Uint32(buffer[:]))
 
-	defer func() {
-		pos = 0
-	}()
+	bitArr.Set(binary.BigEndian.Uint32(buffer[:]))
 	return nil
 }
 
